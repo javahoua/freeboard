@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#EAF4F7">
+<title>تابلوی سفرهای دریایی</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sea-deep: #EAF4F7;
+    --harbor: #FFFFFF;
+    --harbor-line: #D3E6EA;
+    --brass: #A9762A;
+    --brass-dim: #DCC08A;
+    --signal-green: #2E8F68;
+    --signal-red: #C24B36;
+    --underway: #1F8FA0;
+    --foam: #0B2733;
+    --mist: #5C7480;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100vh;
+    background: var(--sea-deep);
+    color: var(--foam);
+    font-family: 'Vazirmatn', sans-serif;
+  }
+  body{
+    background-image:
+      radial-gradient(ellipse 900px 500px at 12% -5%, rgba(46,143,104,0.09), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 90% 10%, rgba(169,118,42,0.07), transparent 55%);
+    background-attachment: fixed;
+  }
+  .mono{ font-family: 'JetBrains Mono', monospace; }
+
+  .wrap{
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 18px 60px;
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .title-block h1{
+    margin:0;
+    font-size: clamp(22px, 5vw, 28px);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .title-block h1 svg{ width:26px; height:26px; flex-shrink:0; color: var(--brass); }
+  .title-block p{
+    margin: 5px 0 0 36px;
+    color: var(--mist);
+    font-size: 13px;
+  }
+  .clock-block{
+    text-align: left;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:3px;
+  }
+  .clock-block .today{
+    font-size: 12.5px;
+    color: var(--mist);
+    font-weight: 600;
+  }
+  .clock-block .now{
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .conn{
+    display:flex; align-items:center; gap:6px;
+    font-size: 12px;
+    color: var(--mist);
+  }
+  .conn .pulse-wrap{
+    position:relative;
+    width:9px; height:9px;
+  }
+  .conn .pulse-dot{
+    position:absolute; inset:0;
+    border-radius:50%;
+    background: var(--signal-green);
+  }
+  .conn .pulse-ring{
+    position:absolute; inset:0;
+    border-radius:50%;
+    border: 1.5px solid var(--signal-green);
+    animation: sonar 2.2s ease-out infinite;
+  }
+  .conn.offline .pulse-dot{ background: var(--signal-red); }
+  .conn.offline .pulse-ring{ display:none; }
+  @keyframes sonar{
+    0%{ transform: scale(1); opacity: 0.9; }
+    100%{ transform: scale(3.2); opacity: 0; }
+  }
+
+  /* ---------- tideline (single signature motion element) ---------- */
+  .tideline{
+    height: 30px;
+    margin: 18px 0 20px;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='30' viewBox='0 0 140 30'><path d='M0 17 Q17.5 3 35 17 T70 17 T105 17 T140 17' fill='none' stroke='%233FA79A' stroke-width='1.6' opacity='0.55'/></svg>");
+    background-repeat: repeat-x;
+    background-size: 140px 30px;
+    animation: tide-scroll 9s linear infinite;
+    opacity: 0.9;
+  }
+  @keyframes tide-scroll{
+    from{ background-position-x: 0; }
+    to{ background-position-x: -140px; }
+  }
+
+  /* ---------- controls: tabs + search ---------- */
+  .controls{
+    display:flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  #pathTabs{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .path-card{
+    appearance: none; -webkit-appearance:none;
+    background: var(--harbor);
+    border: 1px solid var(--harbor-line);
+    color: var(--mist);
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+    white-space: nowrap;
+  }
+  .path-card:hover{ border-color: var(--signal-green); color: var(--foam); }
+  .path-card.active{
+    background: rgba(46,143,104,0.12);
+    border-color: var(--signal-green);
+    color: var(--signal-green);
+  }
+
+  .search-wrap{
+    position: relative;
+  }
+  .search-wrap svg{
+    position:absolute; right:14px; top:50%; transform: translateY(-50%);
+    width:16px; height:16px; color: var(--mist); pointer-events:none;
+  }
+  #searchInput{
+    width:100%;
+    background: var(--harbor);
+    border: 1px solid var(--harbor-line);
+    color: var(--foam);
+    font-family: 'Vazirmatn', sans-serif;
+    font-size: 14px;
+    padding: 11px 40px 11px 14px;
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  #searchInput::placeholder{ color: var(--mist); }
+  #searchInput:focus{ border-color: var(--brass); }
+
+  /* ---------- error banner ---------- */
+  .error-banner{
+    display:none;
+    background: rgba(194,75,54,0.08);
+    border: 1px solid rgba(194,75,54,0.35);
+    color: #9A3A28;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    margin-bottom: 20px;
+  }
+  .error-banner.show{ display:block; }
+
+  /* ---------- hero: next departure ---------- */
+  .hero{
+    display:none;
+    position: relative;
+    background: linear-gradient(160deg, rgba(169,118,42,0.12), rgba(255,255,255,0.92));
+    border: 1px solid var(--brass-dim);
+    border-radius: 16px;
+    padding: 20px 20px 18px;
+    margin-bottom: 22px;
+    overflow:hidden;
+    box-shadow: 0 8px 24px rgba(11,39,51,0.06);
+  }
+  .hero.show{ display:block; }
+  .hero::before{
+    content:'';
+    position:absolute; inset:0;
+    background: radial-gradient(ellipse 260px 160px at 100% 0%, rgba(169,118,42,0.14), transparent 60%);
+    pointer-events:none;
+  }
+  .hero-label{
+    display:flex; align-items:center; gap:7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--brass);
+    margin-bottom: 12px;
+  }
+  .hero-label svg{ width:14px; height:14px; }
+  .hero-main{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .hero-ship{
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .hero-route{
+    font-size: 13px;
+    color: var(--mist);
+    margin-top: 4px;
+  }
+  .hero-time{
+    text-align: left;
+  }
+  .hero-time .t{
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--brass);
+    line-height: 1;
+  }
+  .hero-time .label{
+    font-size: 11.5px;
+    color: var(--mist);
+    margin-top: 4px;
+  }
+  .hero-gauge{
+    margin-top: 16px;
+  }
+
+  /* ---------- capacity gauge (shared) ---------- */
+  .gauge{
+    margin-top: 10px;
+  }
+  .gauge-top{
+    display:flex; justify-content: space-between;
+    font-size: 12px; color: var(--mist);
+    margin-bottom: 5px;
+  }
+  .gauge-top b{ color: var(--foam); font-family:'JetBrains Mono', monospace; }
+  .gauge-track{
+    height: 6px;
+    background: rgba(11,39,51,0.08);
+    border-radius: 100px;
+    overflow:hidden;
+  }
+  .gauge-fill{
+    height:100%;
+    border-radius: 100px;
+    background: var(--signal-green);
+    transition: width 0.6s ease;
+  }
+  .gauge-fill.mid{ background: var(--brass); }
+  .gauge-fill.high{ background: var(--signal-red); }
+
+  /* ---------- board / list ---------- */
+  .board{ display:flex; flex-direction:column; gap: 10px; }
+
+  .empty-state{
+    border: 1px dashed var(--harbor-line);
+    border-radius: 12px;
+    padding: 38px 20px;
+    text-align: center;
+    color: var(--mist);
+    font-size: 14px;
+  }
+  .empty-state svg{ width:26px; height:26px; color: var(--harbor-line); margin-bottom:10px; }
+
+  .row{
+    background: var(--harbor);
+    border: 1px solid var(--harbor-line);
+    border-radius: 12px;
+    padding: 15px 17px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 1px 3px rgba(11,39,51,0.05);
+  }
+  .row:hover{ border-color: #B9D2D8; box-shadow: 0 4px 14px rgba(11,39,51,0.08); }
+
+  .row-top{
+    display:flex;
+    justify-content: space-between;
+    align-items:flex-start;
+    gap: 14px;
+  }
+  .row-ship{
+    display:flex; align-items:center; gap:9px;
+    min-width:0;
+  }
+  .ship-icon-wrap{
+    position:relative;
+    width:30px; height:30px;
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(11,39,51,0.05);
+    border-radius: 9px;
+  }
+  .ship-icon-wrap svg{ width:16px; height:16px; color: var(--mist); }
+  .row.underway .ship-icon-wrap svg{ color: var(--underway); }
+  .wake{
+    position:absolute;
+    top:50%; right:100%;
+    transform: translateY(-50%);
+    display:flex; gap:3px;
+    margin-right:4px;
+  }
+  .wake span{
+    width:4px; height:4px;
+    border-radius:50%;
+    background: var(--underway);
+    opacity:0;
+    animation: wake-ripple 1.6s ease-in-out infinite;
+  }
+  .wake span:nth-child(1){ animation-delay: 0s; }
+  .wake span:nth-child(2){ animation-delay: 0.25s; }
+  .wake span:nth-child(3){ animation-delay: 0.5s; }
+  @keyframes wake-ripple{
+    0%{ opacity:0; transform: scale(0.4); }
+    35%{ opacity:0.7; transform: scale(1); }
+    100%{ opacity:0; transform: scale(0.4); }
+  }
+
+  .row-ship .names{ min-width:0; }
+  .row-ship .ship-name{
+    font-size: 15.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  .row-ship .route-name{
+    font-size: 11.5px;
+    color: var(--mist);
+    margin-top: 2px;
+  }
+
+  .row-time{ text-align:left; flex-shrink:0; }
+  .row-time .t-main{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .row-time .t-sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--mist);
+    margin-top: 2px;
+  }
+
+  .row-bottom{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    margin-top: 12px;
+    gap: 12px;
+  }
+  .badge{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size: 11.5px;
+    padding: 4px 11px;
+    border-radius: 100px;
+    border: 1px solid var(--harbor-line);
+    color: var(--mist);
+    white-space: nowrap;
+  }
+  .badge .bdot{ width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .badge.ok{ color: var(--signal-green); border-color: rgba(46,143,104,0.35); background: rgba(46,143,104,0.08); }
+  .badge.underway{ color: var(--underway); border-color: rgba(31,143,160,0.35); background: rgba(31,143,160,0.08); }
+  .badge.hold{ color: var(--brass); border-color: rgba(169,118,42,0.35); background: rgba(169,118,42,0.08); }
+  .badge.stop{ color: var(--signal-red); border-color: rgba(194,75,54,0.35); background: rgba(194,75,54,0.08); }
+
+  .tickets-left{
+    font-size: 11.5px;
+    color: var(--mist);
+  }
+  .tickets-left b{ color: var(--foam); font-family:'JetBrains Mono', monospace; }
+
+  footer{
+    margin-top: 30px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--mist);
+    opacity: 0.75;
+  }
+
+  /* ---------- skeleton loading ---------- */
+  .skel-row{
+    background: var(--harbor);
+    border: 1px solid var(--harbor-line);
+    border-radius: 12px;
+    padding: 15px 17px;
+    height: 76px;
+    position: relative;
+    overflow:hidden;
+  }
+  .skel-row::after{
+    content:'';
+    position:absolute; inset:0;
+    background: linear-gradient(90deg, transparent, rgba(11,39,51,0.06), transparent);
+    animation: shimmer 1.6s infinite;
+  }
+  @keyframes shimmer{
+    from{ transform: translateX(-100%); }
+    to{ transform: translateX(100%); }
+  }
+
+  @media (max-width: 480px){
+    .hero-main{ flex-direction: column; align-items:flex-start; }
+    .hero-time{ text-align:right; }
+    .clock-block{ align-items:flex-start; }
+    header{ flex-direction: column; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  :focus-visible{
+    outline: 2px solid var(--brass);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title-block">
+        <h1>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c1.5 1.3 3 1.3 4.5 0s3-1.3 4.5 0 3 1.3 4.5 0 3-1.3 4.5 0"/><path d="M5 17l1-8h12l1 8"/><path d="M12 9V4h3l2 3"/></svg>
+          تابلوی سفرهای دریایی
+        </h1>
+        <p>بندرگاه‌های بندرعباس، قشم و هرمز</p>
+      </div>
+      <div class="clock-block">
+        <div class="today" id="todayLabel">—</div>
+        <div class="now mono" id="liveClock">—</div>
+        <div class="conn" id="connIndicator">
+          <span class="pulse-wrap"><span class="pulse-ring"></span><span class="pulse-dot"></span></span>
+          <span>بروزرسانی <span id="countdown" class="mono">۱۰</span> ثانیه دیگر</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="tideline" aria-hidden="true"></div>
+
+    <div class="controls">
+      <div id="pathTabs">
+        <button type="button" class="path-card active" data-path="__all__">همه مسیرها</button>
+      </div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="جستجوی نام شناور…" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="error-banner" id="errorBanner"></div>
+
+    <div class="hero" id="hero">
+      <div class="hero-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.9 4.9l2.8 2.8"/><path d="M16.3 16.3l2.8 2.8"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.9 19.1l2.8-2.8"/><path d="M16.3 7.7l2.8-2.8"/></svg>
+        نزدیک‌ترین سفر
+      </div>
+      <div class="hero-main">
+        <div>
+          <div class="hero-ship" id="heroShip">—</div>
+          <div class="hero-route" id="heroRoute">—</div>
+        </div>
+        <div class="hero-time">
+          <div class="t mono" id="heroCountdown">—</div>
+          <div class="label" id="heroTimeLabel">تا شروع سوارشدن</div>
+        </div>
+      </div>
+      <div class="hero-gauge" id="heroGauge"></div>
+    </div>
+
+    <div class="board" id="board">
+      <div class="skel-row"></div>
+      <div class="skel-row"></div>
+      <div class="skel-row"></div>
+    </div>
+
+    <footer>داده‌ها هر ۱۰ ثانیه از سرویس سفرها به‌روزرسانی می‌شوند</footer>
+  </div>
+
+<script>
+  const API_URL = "/travels";
+  const REFRESH_SECONDS = 10;
+  const ALL_PATHS_VALUE = "__all__";
+
+  const board = document.getElementById('board');
+  const todayLabelEl = document.getElementById('todayLabel');
+  const liveClockEl = document.getElementById('liveClock');
+  const countdownEl = document.getElementById('countdown');
+  const connIndicator = document.getElementById('connIndicator');
+  const errorBanner = document.getElementById('errorBanner');
+  const pathTabs = document.getElementById('pathTabs');
+  const searchInput = document.getElementById('searchInput');
+  const heroEl = document.getElementById('hero');
+  const heroShipEl = document.getElementById('heroShip');
+  const heroRouteEl = document.getElementById('heroRoute');
+  const heroCountdownEl = document.getElementById('heroCountdown');
+  const heroTimeLabelEl = document.getElementById('heroTimeLabel');
+  const heroGaugeEl = document.getElementById('heroGauge');
+
+  let lastTravels = [];
+  let selectedPath = ALL_PATHS_VALUE;
+  let searchQuery = '';
+  let heroTarget = null; // { boardingEndMs, ship, path }
+
+  try{
+    const savedPath = localStorage.getItem('ferryboard.path');
+    if(savedPath) selectedPath = savedPath;
+  }catch(e){}
+
+  const faDigits = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+  function toFaDigits(n){ return String(n).replace(/[0-9]/g, d => faDigits[d]); }
+
+  function formatTime(iso){
+    if(!iso) return '—';
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return iso;
+    return toFaDigits(d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
+  }
+  function formatClock(iso){
+    const d = new Date(iso);
+    return toFaDigits(d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }));
+  }
+
+  const persianDateFmt = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const persianDayOnlyFmt = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { weekday:'short', day:'numeric', month:'short' });
+
+  function formatPersianDate(d){
+    try{ return persianDateFmt.format(d); }catch(e){ return ''; }
+  }
+  function formatPersianShortDate(d){
+    try{ return persianDayOnlyFmt.format(d); }catch(e){ return ''; }
+  }
+  function isSameDay(a, b){
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+  // اگر تاریخ سوارشدن با امروز فرق داشت (مثلاً بعد از نیمه‌شب)، نام روز و تاریخ شمسی‌اش را هم نشان می‌دهیم.
+  function boardingDateTag(iso){
+    if(!iso) return '';
+    const d = new Date(iso);
+    if(isNaN(d.getTime())) return '';
+    if(isSameDay(d, new Date())) return '';
+    return ' · ' + formatPersianShortDate(d);
+  }
+
+  function statusMeta(stat){
+    const raw = (stat || '').toString().trim();
+    if(/در سفر|حرکت|underway|departed/i.test(raw)) return { cls:'underway', label: raw || 'در سفر' };
+    if(/مسافرگیری|باز|فعال|available|open|ok/i.test(raw)) return { cls:'ok', label: raw || 'باز' };
+    if(/تکمیل|بسته|full|closed|cancel|لغو/i.test(raw)) return { cls:'stop', label: raw || 'بسته' };
+    return { cls:'hold', label: raw || 'نامشخص' };
+  }
+
+  function capacityPercent(t){
+    const cap = Number(t.cap);
+    const pass = Number(t.pass);
+    if(!cap || isNaN(cap) || isNaN(pass)) return null;
+    return Math.max(0, Math.min(100, Math.round((pass / cap) * 100)));
+  }
+
+  function gaugeHtml(t){
+    const pct = capacityPercent(t);
+    if(pct === null) return '';
+    const fillCls = pct >= 90 ? 'high' : pct >= 70 ? 'mid' : '';
+    return `
+      <div class="gauge">
+        <div class="gauge-top"><span>مسافر <b>${toFaDigits(t.pass)}</b> از ظرفیت <b>${toFaDigits(t.cap)}</b></span><span>${toFaDigits(pct)}٪</span></div>
+        <div class="gauge-track"><div class="gauge-fill ${fillCls}" style="width:${pct}%"></div></div>
+      </div>
+    `;
+  }
+
+  /* ---------- path tabs ---------- */
+  function updatePathTabs(travels){
+    const paths = [...new Set(travels.map(t => t.path).filter(Boolean))].sort();
+    if(selectedPath !== ALL_PATHS_VALUE && !paths.includes(selectedPath)){
+      selectedPath = ALL_PATHS_VALUE;
+    }
+    const allBtn = `<button type="button" class="path-card${selectedPath === ALL_PATHS_VALUE ? ' active' : ''}" data-path="${ALL_PATHS_VALUE}">همه مسیرها</button>`;
+    const pathBtns = paths.map(p => `<button type="button" class="path-card${selectedPath === p ? ' active' : ''}" data-path="${p}">${p}</button>`).join('');
+    pathTabs.innerHTML = allBtn + pathBtns;
+  }
+  pathTabs.addEventListener('click', (e) => {
+    const btn = e.target.closest('.path-card');
+    if(!btn) return;
+    selectedPath = btn.dataset.path;
+    try{ localStorage.setItem('ferryboard.path', selectedPath); }catch(err){}
+    pathTabs.querySelectorAll('.path-card').forEach(b => b.classList.toggle('active', b.dataset.path === selectedPath));
+    renderAll();
+  });
+
+  let searchDebounce = null;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      searchQuery = searchInput.value.trim();
+      renderAll();
+    }, 150);
+  });
+
+  function getFilteredList(){
+    return (lastTravels || []).filter(t => {
+      const pathOk = selectedPath === ALL_PATHS_VALUE || t.path === selectedPath;
+      const q = searchQuery.toLowerCase();
+      const searchOk = !q || (t.ship || '').toLowerCase().includes(q);
+      return pathOk && searchOk;
+    });
+  }
+
+  /* ---------- hero (next departure) ---------- */
+  function updateHero(list){
+    const candidates = list
+      .filter(t => !t.dep && t.boardingend && statusMeta(t.stat).cls !== 'stop')
+      .map(t => ({ t, endMs: new Date(t.boardingend).getTime() }))
+      .filter(x => !isNaN(x.endMs) && x.endMs > Date.now())
+      .sort((a, b) => a.endMs - b.endMs);
+
+    if(candidates.length === 0){
+      heroEl.classList.remove('show');
+      heroTarget = null;
+      return;
+    }
+    const top = candidates[0].t;
+    heroTarget = { boardingEndMs: candidates[0].endMs, ship: top.ship };
+    heroShipEl.textContent = top.ship || 'شناور نامشخص';
+    const dateTag = boardingDateTag(top.boarding);
+    heroRouteEl.textContent = (top.path ? top.path : '') + dateTag;
+    heroGaugeEl.innerHTML = gaugeHtml(top);
+    heroEl.classList.add('show');
+    tickHeroCountdown();
+  }
+
+  function tickHeroCountdown(){
+    if(!heroTarget){ return; }
+    const remainingMs = heroTarget.boardingEndMs - Date.now();
+    if(remainingMs <= 0){
+      heroCountdownEl.textContent = '۰۰:۰۰';
+      heroTimeLabelEl.textContent = 'زمان سوارشدن به پایان رسید';
+      return;
+    }
+    const totalSec = Math.floor(remainingMs / 1000);
+    const mm = Math.floor(totalSec / 60);
+    const ss = totalSec % 60;
+    heroCountdownEl.textContent = toFaDigits(String(mm).padStart(2,'0')) + ':' + toFaDigits(String(ss).padStart(2,'0'));
+    heroTimeLabelEl.textContent = 'تا پایان سوارشدن';
+  }
+
+  /* ---------- board list ---------- */
+  function renderBoard(list){
+    if(list.length === 0){
+      board.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c1.5 1.3 3 1.3 4.5 0s3-1.3 4.5 0 3 1.3 4.5 0 3-1.3 4.5 0"/><path d="M5 17l1-8h12l1 8"/><path d="M12 9V4h3l2 3"/></svg>
+          <div>سفری با این مشخصات ثبت نشده</div>
+        </div>`;
+      return;
+    }
+
+    board.innerHTML = list.map(t => {
+      const meta = statusMeta(t.stat);
+      const showPathTag = selectedPath === ALL_PATHS_VALUE && t.path;
+      const wake = meta.cls === 'underway' ? `<span class="wake"><span></span><span></span><span></span></span>` : '';
+      const ticketsHtml = (t.tickets !== undefined && t.tickets !== null && t.tickets > 0)
+        ? `<span class="tickets-left">بلیط باقیمانده: <b>${toFaDigits(t.tickets)}</b></span>`
+        : '<span></span>';
+
+      return `
+      <div class="row ${meta.cls}">
+        <div class="row-top">
+          <div class="row-ship">
+            <span class="ship-icon-wrap">
+              ${wake}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c1.5 1.3 3 1.3 4.5 0s3-1.3 4.5 0 3 1.3 4.5 0 3-1.3 4.5 0"/><path d="M5 17l1-8h12l1 8"/><path d="M12 9V4h3l2 3"/></svg>
+            </span>
+            <span class="names">
+              <div class="ship-name">${t.ship ?? 'شناور نامشخص'}</div>
+              ${showPathTag ? `<div class="route-name">${t.path}</div>` : ''}
+            </span>
+          </div>
+          <div class="row-time">
+            <div class="t-main mono">${formatTime(t.boarding)}</div>
+            <div class="t-sub mono">تا ${formatTime(t.boardingend)}</div>
+            ${boardingDateTag(t.boarding) ? `<div class="t-sub">${boardingDateTag(t.boarding).replace(' · ', '')}</div>` : ''}
+          </div>
+        </div>
+        ${gaugeHtml(t)}
+        <div class="row-bottom">
+          <span class="badge ${meta.cls}"><span class="bdot"></span>${meta.label}</span>
+          ${ticketsHtml}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderAll(){
+    const list = getFilteredList();
+    updateHero(list);
+    renderBoard(list);
+  }
+
+  /* ---------- error / connection state ---------- */
+  function showError(message){
+    errorBanner.textContent = message;
+    errorBanner.classList.add('show');
+    connIndicator.classList.add('offline');
+  }
+  function clearError(){
+    errorBanner.classList.remove('show');
+    connIndicator.classList.remove('offline');
+  }
+
+  function normalizeTravels(raw){
+    if(Array.isArray(raw)) return raw;
+    if(raw && typeof raw === 'object'){
+      if(Array.isArray(raw.contents)) return raw.contents;
+      if(typeof raw.contents === 'string'){
+        try{ const parsed = JSON.parse(raw.contents); if(Array.isArray(parsed)) return parsed; }catch(e){}
+      }
+      if(Array.isArray(raw.data)) return raw.data;
+      if(Array.isArray(raw.travels)) return raw.travels;
+    }
+    throw new Error('شکل داده دریافتی نامعتبر بود');
+  }
+
+  const ATTEMPT_TIMEOUT_MS = 7000;
+
+  async function tryFetch(url){
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort(new DOMException('زمان انتظار اتصال تمام شد', 'TimeoutError'));
+    }, ATTEMPT_TIMEOUT_MS);
+    try{
+      const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+      const raw = await res.json().catch(() => null);
+      if(!res.ok){
+        if(res.status === 429){
+          const err = new Error((raw && raw.message) || 'سرویس سفرها موقتاً محدود شده است (۴۲۹)');
+          err.code = 429;
+          throw err;
+        }
+        const err = new Error((raw && raw.message) || 'پاسخ سرور نامعتبر بود (' + res.status + ')');
+        err.code = res.status;
+        throw err;
+      }
+      return normalizeTravels(raw);
+    }catch(err){
+      if(err.name === 'AbortError' || err.name === 'TimeoutError'){
+        const timeoutErr = new Error('اتصال بیش از حد طول کشید');
+        timeoutErr.code = 'timeout';
+        throw timeoutErr;
+      }
+      throw err;
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+
+  let extraBackoffSeconds = 0;
+
+  async function fetchTravels(){
+    try{
+      const travels = await tryFetch(API_URL);
+      clearError();
+      extraBackoffSeconds = 0;
+      lastTravels = travels;
+      updatePathTabs(travels);
+      renderAll();
+    }catch(err){
+      if(err.code === 429){
+        extraBackoffSeconds = 20;
+        showError('سرویس سفرها موقتاً محدود شده (۴۲۹) — تلاش مجدد در ' + toFaDigits(REFRESH_SECONDS + extraBackoffSeconds) + ' ثانیه.');
+      }else{
+        showError('خطا در اتصال به سرویس سفرها — تلاش مجدد در ' + toFaDigits(REFRESH_SECONDS + extraBackoffSeconds) + ' ثانیه. (' + err.message + ')');
+      }
+    }
+  }
+
+  /* ---------- clock + countdown tickers ---------- */
+  function tickClock(){
+    const now = new Date();
+    liveClockEl.textContent = toFaDigits(now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' }));
+    todayLabelEl.textContent = formatPersianDate(now);
+  }
+
+  let remaining = REFRESH_SECONDS;
+  function tickCountdown(){
+    remaining -= 1;
+    if(remaining <= 0){
+      remaining = REFRESH_SECONDS + extraBackoffSeconds;
+      fetchTravels();
+    }
+    countdownEl.textContent = toFaDigits(remaining);
+  }
+
+  fetchTravels();
+  tickClock();
+  setInterval(() => {
+    tickClock();
+    tickCountdown();
+    tickHeroCountdown();
+  }, 1000);
+</script>
+</body>
+</html>
